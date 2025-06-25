@@ -56,42 +56,56 @@ addEvent("shop->fetchItems", true)
 addEventHandler("shop->fetchItems", root, fetchItems)
 
 function fetchCart(shopID)
+  --Játékos serial lekérése, kosár adatok lekérdezése shopID és serial alapján
   local serial = getPlayerSerial(source)
   local results = dbPoll(dbQuery(db, "SELECT * FROM carts WHERE shopID = ? AND serial = ?", shopID, serial), -1)
 
+  --Változók, amiket a kliensnek küldeni fogunk
   local cartData = {}
   local cartItemCount = 0
+
   for k, v in ipairs(results) do
     cartItemCount = cartItemCount + v.count
     table.insert(cartData, {name=v.itemName, count=v.count})
   end
+
+  --Adatok küldése a kliensnek
   triggerClientEvent(source, "shop->receiveCart", source, cartData, cartItemCount)
 end
 addEvent("shop->fetchCart", true)
 addEventHandler("shop->fetchCart", root, fetchCart)
 
 function updateCart(shopID, itemName, count)
+  --Serial lekérése, kosár frissítése az adatbázisban
   local serial = getPlayerSerial(source)
   local updateQuery = dbQuery(db, "UPDATE carts SET count = ? WHERE serial = ? AND itemName = ? AND shopID = ?", count, serial, itemName, shopID)
   dbFree(updateQuery)
+
+  --Kosár újratöltése
   triggerEvent("shop->fetchCart", source, shopID)
 end
 addEvent("shop->updateCart", true)
 addEventHandler("shop->updateCart", root, updateCart)
 
 function insertItemIntoCart(shopID, itemName)
+  --Serial lekérése, új item hozzáadás a kosárhoz az adatbázisban
   local serial = getPlayerSerial(source)
   local insertQuery = dbQuery(db, "INSERT INTO carts (serial, shopID, itemName) VALUES (?, ?, ?)", serial, shopID, itemName)
   dbFree(insertQuery)
+
+  --Kosár újratöltése
   triggerEvent("shop->fetchCart", source, shopID)
 end
 addEvent("shop->insertItemIntoCart", true)
 addEventHandler("shop->insertItemIntoCart", root, insertItemIntoCart)
 
 function clearCart(shopID)
+  --Serial lekérése, kosár törlése az adatbázisban
   local serial = getPlayerSerial(source)
   local deleteQuery = dbQuery(db, "DELETE FROM carts WHERE serial = ? AND shopID = ?", serial, shopID)
   dbFree(deleteQuery)
+
+  --Kosár újratöltése
   triggerEvent("shop->fetchCart", source, shopID)
 end
 addEvent("shop->clearCart", true)

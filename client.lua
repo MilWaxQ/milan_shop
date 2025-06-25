@@ -4,6 +4,7 @@ local sX, sY = guiGetScreenSize()
 local oX, oY = 2560, 1080
 local scale = sY / oY
 
+--Kiválasztott bolt változók
 local selectedShopElement = nil
 local shopItems = {}
 local cart = {}
@@ -14,6 +15,7 @@ local cartItemCount = 0
 local maxItemCount = 14
 local scrollPosition = 0
 
+--Bolt box változók
 local shopBoxW, shopBoxH = 400 * scale, 590 * scale
 local shopBoxX, shopBoxY
 
@@ -106,24 +108,33 @@ function onKey(button, isPress)
   --Kurzor mutatása/eltüntetése az 'M' gomb megnyomására
   if (button == "m" and isPress) then
     if (selectedShopElement ~= nil) then return end
-    
+
     showCursor(not isCursorShowing())
+  --Backspace megnyomására a bolt bezárása / visszalépés
   elseif (button == "backspace" and isPress and selectedShopElement) then
+    --Ha a kosár látható, visszalépés a boltba
     if (showCart) then showCart = false return end
 
+    --A bolt bezárása
     selectedShopElement = nil
     showCart = false
     scrollPosition = 0
     shopItems = {}
+  --Felfele görgetés
   elseif (button == "mouse_wheel_up") then
+    --A görgetés letiltása, ha nincs megnyitva bolt, vagy a tetejénél vagyunk
     if (not selectedShopElement or scrollPosition == 0) then return end
 
+    --Kosár / bolt görgetés kezelése
     if ((showCart and #cart > maxItemCount) or (not showCart and #shopItems > maxItemCount)) then
       scrollPosition = scrollPosition - 1
     end
+  --Lefele görgetés
   elseif (button == "mouse_wheel_down") then
+    --A görgetés letiltása, ha nicns megnyitva bolt
     if (not selectedShopElement) then return end
 
+    --Kosár / bolt görgetés kezelése
     if ((showCart and #cart > maxItemCount and scrollPosition < #cart-maxItemCount) or (not showCart and #shopItems > maxItemCount and scrollPosition < #shopItems-maxItemCount)) then
       scrollPosition = scrollPosition + 1
     end
@@ -133,19 +144,24 @@ addEventHandler("onClientKey", root, onKey)
 
 function onClick(button, state, x, y, wx, wy, wz, clickedElement)
   if (button == "right" and state == "down") then
+    --Ha a játékos nem egy elementre kattintott, nem megyünk tovább
     if (not clickedElement) then return end
     local eX, eY, eZ = getElementPosition(clickedElement)
     local pX, pY, pZ = getElementPosition(localPlayer)
     local distance = getDistanceBetweenPoints3D(pX, pY, pZ, eX, eY, eZ)
-  
+    
+    --Ha a játékos túl messze van, nem megyünk tovább
     if (distance > 2) then return end
 
+    --Ha a kattintott element nem egy bolt, a kód nem megy tovább
     local clickedShopID = getElementData(clickedElement, "shop:id")
     if (not clickedShopID) then return end
 
+    --Bolt adatainak betöltése
     triggerServerEvent("shop->fetchItems", localPlayer, clickedShopID)
     triggerServerEvent("shop->fetchCart", localPlayer, clickedShopID)
     
+    --Bolt megnyitása
     selectedShopElement = clickedElement
   elseif (button == "left" and state == "down" and selectedShopElement) then
     local selectedShopID = getElementData(selectedShopElement, "shop:id")
