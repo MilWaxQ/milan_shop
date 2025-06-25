@@ -99,6 +99,18 @@ end
 addEvent("shop->insertItemIntoCart", true)
 addEventHandler("shop->insertItemIntoCart", root, insertItemIntoCart)
 
+function removeItemFromCart(shopID, itemName)
+  --Serial lekérése, item törlése a kosárból az adatbázisban
+  local serial = getPlayerSerial(source)
+  local insertQuery = dbQuery(db, "DELETE FROM carts WHERE serial = ? AND shopID = ? AND itemName = ?", serial, shopID, itemName)
+  dbFree(insertQuery)
+
+  --Kosár újratöltése
+  triggerEvent("shop->fetchCart", source, shopID)
+end
+addEvent("shop->removeItemFromCart", true)
+addEventHandler("shop->removeItemFromCart", root, removeItemFromCart)
+
 function clearCart(shopID)
   --Serial lekérése, kosár törlése az adatbázisban
   local serial = getPlayerSerial(source)

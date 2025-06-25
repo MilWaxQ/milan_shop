@@ -30,6 +30,7 @@ addEventHandler("shop->receiveItems", root, receiveItems)
 function receiveCart(cartData, itemCount)
   cart = cartData
   cartItemCount = itemCount
+  if (#cart == 0) then showCart = false end
 end
 addEvent("shop->receiveCart", true)
 addEventHandler("shop->receiveCart", root, receiveCart)
@@ -68,8 +69,15 @@ function onRender()
       
         --Sor box rajzolás, szövegek kiírása
         dxDrawRectangle(shopBoxX, rowY, shopBoxW, 40, (i % 2 == 0 and tocolor(25, 25, 25) or tocolor(50, 50, 50)))
-        dxDrawText(cart[i].name, shopBoxX+10, rowY+2, shopBoxX + shopBoxW, rowY + 40 - 5, tocolor(255, 255, 255), 1.2, "default", "left", "center", false, false, false, true)
-        dxDrawText(cart[i].count.. "db", shopBoxX+10, rowY+2, shopBoxX + shopBoxW - 5, rowY + 40 - 5, tocolor(255, 255, 255), 1.2, "default", "right", "center", false, false, false, true)
+        dxDrawText(cart[i].name, shopBoxX+10, rowY+2, shopBoxX + shopBoxW, rowY + 40 - 5, tocolor(255, 255, 255), 1.2, "default", "left", "top", false, false, false, true)
+        dxDrawText(cart[i].count.. "db", shopBoxX+10, rowY+2, shopBoxX + shopBoxW - 5, rowY + 40 - 5, tocolor(255, 255, 255), 1.2, "default", "left", "bottom", false, false, false, true)
+
+        --'Törlés' gomb
+        local cartButtonX, cartButtonY = shopBoxX + shopBoxW - 90, rowY + 10
+        local cartButtonW, cartButtonH = 80, 20
+        local buttonOpacity = isMouseInPosition(cartButtonX, cartButtonY, cartButtonW, cartButtonH) and 200 or 150
+        dxDrawRectangle(cartButtonX, cartButtonY, cartButtonW, cartButtonH, tocolor(255, 0, 0, buttonOpacity))
+        dxDrawText("Törlés", cartButtonX, cartButtonY, cartButtonX + cartButtonW, cartButtonY + cartButtonH, tocolor(0, 0, 0), 1.2, "default", "center", "center", false, false, false, true)
       end
     else
       --Bolt név renderelése
@@ -165,23 +173,46 @@ function onClick(button, state, x, y, wx, wy, wz, clickedElement)
     selectedShopElement = clickedElement
   elseif (button == "left" and state == "down" and selectedShopElement) then
     local selectedShopID = getElementData(selectedShopElement, "shop:id")
-    --'Kosárba' gomb kattintás
-    for i=1+scrollPosition, (#shopItems > maxItemCount and maxItemCount+scrollPosition or #shopItems) do
-      --Adott sor Y helyzete
-      local rowY = shopBoxY+30 + ((i-1-scrollPosition)*40)
-      local cartButtonX, cartButtonY = shopBoxX + shopBoxW - 90, rowY + 10
-      local cartButtonW, cartButtonH = 80, 20
-      if (isMouseInPosition(cartButtonX, cartButtonY, cartButtonW, cartButtonH)) then
-        local itemName = shopItems[i].name
-        for k, v in ipairs(cart) do
-          if (v.name == itemName) then
-            triggerServerEvent("shop->updateCart", localPlayer, selectedShopID, itemName, v.count+1)
-            return
+    if (showCart) then
+      --'Törlés' gomb kattintás
+      for i=1+scrollPosition, (#cart > maxItemCount and maxItemCount+scrollPosition or #cart) do
+        --Adott sor Y helyzete
+        local rowY = shopBoxY+30 + ((i-1-scrollPosition)*40)
+        local cartButtonX, cartButtonY = shopBoxX + shopBoxW - 90, rowY + 10
+        local cartButtonW, cartButtonH = 80, 20
+        if (isMouseInPosition(cartButtonX, cartButtonY, cartButtonW, cartButtonH)) then
+          local itemName = cart[i].name
+          --Ha több mint egy van az adott itemből a kosárban, akkor elveszünk egyet
+          if (cart[i].count > 1) then
+            triggerServerEvent("shop->updateCart", localPlayer, selectedShopID, itemName, cart[i].count-1)
+          else
+            --Ha csak egy item van, töröljük a kosárból
+            triggerServerEvent("shop->removeItemFromCart", localPlayer, selectedShopID, itemName)
           end
         end
-        triggerServerEvent("shop->insertItemIntoCart", localPlayer, selectedShopID, itemName)
+      end
+    else
+      --'Kosárba' gomb kattintás
+      for i=1+scrollPosition, (#shopItems > maxItemCount and maxItemCount+scrollPosition or #shopItems) do
+        --Adott sor Y helyzete
+        local rowY = shopBoxY+30 + ((i-1-scrollPosition)*40)
+        local cartButtonX, cartButtonY = shopBoxX + shopBoxW - 90, rowY + 10
+        local cartButtonW, cartButtonH = 80, 20
+        if (isMouseInPosition(cartButtonX, cartButtonY, cartButtonW, cartButtonH)) then
+          local itemName = shopItems[i].name
+          for k, v in ipairs(cart) do
+            if (v.name == itemName) then
+              --Ha már benne van a kosárban az item, növeljük egyel a darabszámot
+              triggerServerEvent("shop->updateCart", localPlayer, selectedShopID, itemName, v.count+1)
+              return
+            end
+          end
+          --Ha nincs benne a kosárban az item, hozzáadjuk
+          triggerServerEvent("shop->insertItemIntoCart", localPlayer, selectedShopID, itemName)
+        end
       end
     end
+    
 
     -- 'Kosár megtekintése' gombra kattintás
     local viewCartX, viewCartY = shopBoxX, shopBoxY + shopBoxH
