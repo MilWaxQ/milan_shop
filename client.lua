@@ -105,6 +105,8 @@ addEventHandler("onClientRender", root, onRender)
 function onKey(button, isPress)
   --Kurzor mutatása/eltüntetése az 'M' gomb megnyomására
   if (button == "m" and isPress) then
+    if (selectedShopElement ~= nil) then return end
+    
     showCursor(not isCursorShowing())
   elseif (button == "backspace" and isPress and selectedShopElement) then
     if (showCart) then showCart = false return end
