@@ -166,16 +166,16 @@ function onClick(button, state, x, y, wx, wy, wz, clickedElement)
   elseif (button == "left" and state == "down" and selectedShopElement) then
     local selectedShopID = getElementData(selectedShopElement, "shop:id")
     --'Kosárba' gomb kattintás
-    for i=1, #shopItems do
+    for i=1+scrollPosition, (#shopItems > maxItemCount and maxItemCount+scrollPosition or #shopItems) do
       --Adott sor Y helyzete
-      local rowY = shopBoxY+30 + ((i-1)*40)
+      local rowY = shopBoxY+30 + ((i-1-scrollPosition)*40)
       local cartButtonX, cartButtonY = shopBoxX + shopBoxW - 90, rowY + 10
       local cartButtonW, cartButtonH = 80, 20
       if (isMouseInPosition(cartButtonX, cartButtonY, cartButtonW, cartButtonH)) then
         local itemName = shopItems[i]["name"]
         for k, v in ipairs(cart) do
           if (v["name"] == itemName) then
-            triggerServerEvent("shop->updateCart", localPlayer, selectedShopID, itemName, v["count"])
+            triggerServerEvent("shop->updateCart", localPlayer, selectedShopID, itemName, v["count"]+1)
             return
           end
         end
