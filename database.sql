@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jun 25, 2025 at 07:07 PM
+-- Generation Time: Jun 25, 2025 at 07:34 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -33,6 +33,13 @@ CREATE TABLE `carts` (
   `itemName` varchar(255) NOT NULL,
   `count` int(11) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_hungarian_ci;
+
+--
+-- Dumping data for table `carts`
+--
+
+INSERT INTO `carts` (`serial`, `shopID`, `itemName`, `count`) VALUES
+('E4D97C36A44B0CB33E39F57E003BA391', 1, 'Víz', 1);
 
 -- --------------------------------------------------------
 
@@ -107,7 +114,7 @@ INSERT INTO `shops` (`ID`, `name`, `posX`, `posY`, `posZ`) VALUES
 ALTER TABLE `carts`
   ADD PRIMARY KEY (`serial`,`shopID`,`itemName`),
   ADD KEY `shopID` (`shopID`),
-  ADD KEY `itemName` (`itemName`);
+  ADD KEY `itemName` (`itemName`,`shopID`);
 
 --
 -- Indexes for table `items`
@@ -140,8 +147,7 @@ ALTER TABLE `shops`
 -- Constraints for table `carts`
 --
 ALTER TABLE `carts`
-  ADD CONSTRAINT `carts_ibfk_1` FOREIGN KEY (`shopID`) REFERENCES `shops` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `carts_ibfk_2` FOREIGN KEY (`itemName`) REFERENCES `items` (`name`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `carts_ibfk_1` FOREIGN KEY (`itemName`,`shopID`) REFERENCES `items` (`name`, `shopID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `items`
