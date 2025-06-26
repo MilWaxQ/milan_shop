@@ -4,6 +4,9 @@ local sX, sY = guiGetScreenSize()
 local oX, oY = 2560, 1080
 local scale = sY / oY
 
+--Összes bolt NPC tárolása
+local shopNpcs = {}
+
 --Kiválasztott bolt változók
 local selectedShopElement = nil
 local shopItems = {}
@@ -18,6 +21,18 @@ local scrollPosition = 0
 --Bolt box változók
 local shopBoxW, shopBoxH = 400 * scale, 590 * scale
 local shopBoxX, shopBoxY
+
+--Bolt NPC-k kérése a szervertől
+function onStart()
+  triggerServerEvent("shop->getShopNPCs", localPlayer)
+end
+addEventHandler("onClientResourceStart", resourceRoot, onStart)
+
+function receiveNPCs(npcList)
+  shopNpcs = npcList
+end
+addEvent("shop->receiveShopNPCs", true)
+addEventHandler("shop->receiveShopNPCs", root, receiveNPCs)
 
 --Itemek fogadása
 function receiveItems(items)
@@ -39,7 +54,7 @@ addEventHandler("shop->receiveCart", root, receiveCart)
 function onRender()
 
   -- Loop az összes ped-en
-  for k, v in ipairs(getElementsByType("ped")) do
+  for k, v in ipairs(shopNpcs) do
     local shopName = getElementData(v, "shop:name")
     if (shopName) then
       local screenX, screenY = getScreenFromWorldPosition(getPedBonePosition(v, 6))

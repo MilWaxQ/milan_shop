@@ -16,8 +16,8 @@ function init()
     outputServerLog("DevMTA: Sikeres MySQL csatlakozás")
 
     --Boltok betöltése
-    local shops = dbPoll(dbQuery(db, "SELECT * FROM shops"), -1)
-    for k, v in ipairs(shops) do
+    local shopsQuery = dbPoll(dbQuery(db, "SELECT * FROM shops"), -1)
+    for k, v in ipairs(shopsQuery) do
       local npc = createPed(67, v.posX, v.posY, v.posZ)
       setElementFrozen(npc, true)
 
@@ -43,6 +43,8 @@ function fetchItems(shopID)
   --Itemek lekérdezése shopID alapján
   local results = dbPoll(dbQuery(db, "SELECT * FROM items WHERE shopID = ?", shopID), -1)
 
+  if (not results) then return end
+
   --Loop az eredményen, berakás az items listába
   for k, v in ipairs(results) do
     local item = {name=v.name, price=v.price}
@@ -60,6 +62,8 @@ function fetchCart(shopID)
   local serial = getPlayerSerial(source)
   local results = dbPoll(dbQuery(db, "SELECT * FROM carts WHERE shopID = ? AND serial = ?", shopID, serial), -1)
 
+  if (not results) then return end
+
   --Változók, amiket a kliensnek küldeni fogunk
   local cartData = {}
   local cartItemCount = 0
@@ -75,11 +79,19 @@ end
 addEvent("shop->fetchCart", true)
 addEventHandler("shop->fetchCart", root, fetchCart)
 
+function getShopNPCs()
+  triggerClientEvent(source, "shop->receiveShopNPCs", source, shops)
+end
+
+addEvent("shop->getShopNPCs", true)
+addEventHandler("shop->getShopNPCs", root, getShopNPCs)
+
 function updateCart(shopID, itemName, count)
   --Serial lekérése, kosár frissítése az adatbázisban
   local serial = getPlayerSerial(source)
-  local updateQuery = dbQuery(db, "UPDATE carts SET count = ? WHERE serial = ? AND itemName = ? AND shopID = ?", count, serial, itemName, shopID)
-  dbFree(updateQuery)
+  local updateQuery = dbPoll(dbQuery(db, "UPDATE carts SET count = ? WHERE serial = ? AND itemName = ? AND shopID = ?", count, serial, itemName, shopID), -1)
+
+  if (not updateQuery) then return end
 
   --Kosár újratöltése
   triggerEvent("shop->fetchCart", source, shopID)
@@ -90,8 +102,9 @@ addEventHandler("shop->updateCart", root, updateCart)
 function insertItemIntoCart(shopID, itemName)
   --Serial lekérése, új item hozzáadás a kosárhoz az adatbázisban
   local serial = getPlayerSerial(source)
-  local insertQuery = dbQuery(db, "INSERT INTO carts (serial, shopID, itemName) VALUES (?, ?, ?)", serial, shopID, itemName)
-  dbFree(insertQuery)
+  local insertQuery = dbPoll(dbQuery(db, "INSERT INTO carts (serial, shopID, itemName) VALUES (?, ?, ?)", serial, shopID, itemName), -1)
+  
+  if (not insertQuery) then return end
 
   --Kosár újratöltése
   triggerEvent("shop->fetchCart", source, shopID)
@@ -102,8 +115,9 @@ addEventHandler("shop->insertItemIntoCart", root, insertItemIntoCart)
 function removeItemFromCart(shopID, itemName)
   --Serial lekérése, item törlése a kosárból az adatbázisban
   local serial = getPlayerSerial(source)
-  local insertQuery = dbQuery(db, "DELETE FROM carts WHERE serial = ? AND shopID = ? AND itemName = ?", serial, shopID, itemName)
-  dbFree(insertQuery)
+  local insertQuery = dbPoll(dbQuery(db, "DELETE FROM carts WHERE serial = ? AND shopID = ? AND itemName = ?", serial, shopID, itemName), -1)
+  
+  if (not insertQuery) then return end
 
   --Kosár újratöltése
   triggerEvent("shop->fetchCart", source, shopID)
@@ -114,8 +128,9 @@ addEventHandler("shop->removeItemFromCart", root, removeItemFromCart)
 function clearCart(shopID)
   --Serial lekérése, kosár törlése az adatbázisban
   local serial = getPlayerSerial(source)
-  local deleteQuery = dbQuery(db, "DELETE FROM carts WHERE serial = ? AND shopID = ?", serial, shopID)
-  dbFree(deleteQuery)
+  local deleteQuery = dbPoll(dbQuery(db, "DELETE FROM carts WHERE serial = ? AND shopID = ?", serial, shopID), -1)
+  
+  if (not deleteQuery) then return end
 
   --Kosár újratöltése
   triggerEvent("shop->fetchCart", source, shopID)
